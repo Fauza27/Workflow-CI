@@ -1,9 +1,7 @@
-name: mine-classification
+name: workflow-ci
 
-conda_env: null
+conda_env: conda.yaml
 
 entry_points:
   main:
-    parameters:
-      data_path: { type: str }t
-    command: "python modelling_tuning.py {data_path}"
+    command: "python modelling_tuning.py"
