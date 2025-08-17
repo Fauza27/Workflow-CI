@@ -4,5 +4,5 @@ conda_env: null
 entry_points:
   main:
     parameters:
-      data_path: { type: str }
+      data_path: { type: str, default: "MLProject/landmine_preprocessing.csv" }
     command: "python modelling_tuning.py {data_path}"

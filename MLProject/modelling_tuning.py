@@ -31,8 +31,9 @@ X_train, X_test, y_train, y_test = train_test_split(
 # import dagshub
 # dagshub.init(repo_owner='Fauza27', repo_name='Eksperimen_SML_Muhammad-Fauza', mlflow=True)
 
-mlflow.set_tracking_uri("file:///home/runner/work/Workflow-CI/Workflow-CI/mlruns")
-#mlflow.set_experiment("Mine Classification with RF")
+mlflow.set_tracking_uri(f"file://{os.getcwd()}/mlruns")
+mlflow.set_experiment("Mine Classification with RF")
+
 
 
 # ========================================
@@ -56,30 +57,31 @@ grid_search = GridSearchCV(
 # Training + Logging Manual
 # ========================================
 
-start_time = time.time()
-grid_search.fit(X_train, y_train)
-train_time = time.time() - start_time
+with mlflow.start_run():
+    start_time = time.time()
+    grid_search.fit(X_train, y_train)
+    train_time = time.time() - start_time
 
-best_model = grid_search.best_estimator_
-y_pred = best_model.predict(X_test)
+    best_model = grid_search.best_estimator_
+    y_pred = best_model.predict(X_test)
 
-acc = accuracy_score(y_test, y_pred)
-f1 = f1_score(y_test, y_pred, average="macro")
-precision = precision_score(y_test, y_pred, average="macro")
-recall = recall_score(y_test, y_pred, average="macro")
-mcc = matthews_corrcoef(y_test, y_pred)   # metric tambahan
-test_size_ratio = len(X_test) / len(X)# metric tambahan
+    acc = accuracy_score(y_test, y_pred)
+    f1 = f1_score(y_test, y_pred, average="macro")
+    precision = precision_score(y_test, y_pred, average="macro")
+    recall = recall_score(y_test, y_pred, average="macro")
+    mcc = matthews_corrcoef(y_test, y_pred)   # metric tambahan
+    test_size_ratio = len(X_test) / len(X)# metric tambahan
 
-mlflow.log_params(grid_search.best_params_)
-mlflow.log_metric("accuracy", acc)
-mlflow.log_metric("f1_macro", f1)
-mlflow.log_metric("precision_macro", precision)
-mlflow.log_metric("recall_macro", recall)
-mlflow.log_metric("matthews_corrcoef", mcc)
-mlflow.log_metric("train_time_sec", train_time)
-mlflow.log_metric("test_size_ratio", test_size_ratio)
+    mlflow.log_params(grid_search.best_params_)
+    mlflow.log_metric("accuracy", acc)
+    mlflow.log_metric("f1_macro", f1)
+    mlflow.log_metric("precision_macro", precision)
+    mlflow.log_metric("recall_macro", recall)
+    mlflow.log_metric("matthews_corrcoef", mcc)
+    mlflow.log_metric("train_time_sec", train_time)
+    mlflow.log_metric("test_size_ratio", test_size_ratio)
 
-mlflow.sklearn.log_model(best_model, "random_forest_model")
+    mlflow.sklearn.log_model(best_model, "random_forest_model")
 
 print("Best params:", grid_search.best_params_)
 print("Accuracy:", acc)
