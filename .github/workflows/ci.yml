@@ -8,12 +8,12 @@ on:
   workflow_dispatch:
 
 env:
-  CSV_PATH: "MLProject/landmine_preprocessing.csv"
+  CSV_PATH: "landmine_preprocessing.csv"
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30 # Tambahkan ini jika training lama
+    timeout-minutes: 30
 
     steps:
       - name: Checkout repo
@@ -31,7 +31,7 @@ jobs:
 
       - name: Run MLflow project
         run: |
-          export MLFLOW_TRACKING_URI=file:./mlruns  # Set URI relatif untuk menghindari error permission
+          export MLFLOW_TRACKING_URI=file:./mlruns
           mlflow run MLProject -P data_path=${{ env.CSV_PATH }} --env-manager=local
 
       - name: Get latest MLflow run_id
