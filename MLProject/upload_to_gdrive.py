@@ -82,4 +82,4 @@ for run_id in os.listdir(local_mlruns_0):
         # Upload isinya (subfolder, file) secara rekursif
         upload_directory(run_id_local_path, run_id_folder_id)
 
-print("=== All run_id folders and files have been uploaded directly to Shared Drive! ====")
+print("=== All run_id folders and files have been uploaded directly to Shared Drive! ===")
