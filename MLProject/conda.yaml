@@ -1,12 +1,10 @@
-name: mlflow-env
+name: mine-classification-env
 channels:
   - defaults
 dependencies:
   - python=3.12
-  - pandas
-  - scikit-learn
-  - mlflow
-  - numpy
   - pip
   - pip:
-      - any-other-package
+      - pandas
+      - scikit-learn
+      - mlflow
