@@ -8,11 +8,13 @@ on:
   workflow_dispatch:
 
 env:
-  CSV_PATH: "landmine_preprocessing.csv"
+  CSV_PATH: "MLProject/landmine_preprocessing.csv"
+  MLFLOW_TRACKING_URI: file://./mlruns
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout repo
@@ -34,28 +36,37 @@ jobs:
 
       - name: Get latest MLflow run_id
         run: |
-          RUN_ID=$(ls -td mlruns/0/*/ | head -n 1 | cut -d'/' -f3)
+          RUN_ID=$(mlflow runs list --experiment-id 0 | grep "RUNNING\|FINISHED" | head -n 1 | awk '{print $2}')
           echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
           echo "Latest run_id: $RUN_ID"
+
+      - name: Check if run_id exists
+        run: |
+          if [ -z "${{ env.RUN_ID }}" ]; then
+            echo "Error: No valid run_id found"
+            exit 1
+          fi
 
       - name: Commit MLflow artifacts
         run: |
           git config --local user.name "github-actions[bot]"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git add mlruns/
-          git commit -m "Add MLflow run artifacts for run ${{ env.RUN_ID }}" || echo "No changes to commit"
-          git push
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Add MLflow run artifacts for run ${{ env.RUN_ID }}"
+            git push
+          fi
 
-      - name: Build Docker image from model
-        run: |
-          mlflow models build-docker -m "mlruns/0/${{ env.RUN_ID }}/artifacts/random_forest_model" -n "${{ secrets.DOCKER_HUB_USERNAME }}/mlflow-model:latest"
-
-      - name: Docker login
+      - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-      - name: Push Docker image
+      - name: Build and push Docker image
         run: |
-          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/mlflow-model:latest
+          mlflow models build-docker -m "mlruns/0/${{ env.RUN_ID }}/artifacts/random_forest_model" -n "${{ secrets.DOCKER_HUB_USERNAME }}/mlflow-model:latest" --push
+        env:
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}

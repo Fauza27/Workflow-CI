@@ -1,7 +1,11 @@
-name: workflow-ci
+name: Landmine Detection
 
-conda_env: conda.yaml
+conda_env: null
 
 entry_points:
   main:
-    command: "python modelling_tuning.py"
+    parameters:
+      data_path:
+        type: string
+        default: "MLProject/landmine_preprocessing.csv"
+    command: "python modelling_tuning.py {data_path}"

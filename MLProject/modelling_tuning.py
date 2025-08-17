@@ -7,16 +7,19 @@ from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_sc
 import time
 import sys
 
-# ========================================
 # Load data preprocessing
-# ========================================
-# Gunakan path relatif yang dikirim MLflow Project
 if len(sys.argv) > 1:
     data_path = sys.argv[1]
 else:
     data_path = "landmine_preprocessing.csv"
 
-df = pd.read_csv(data_path)
+try:
+    df = pd.read_csv(data_path)
+    if "Mine type" not in df.columns:
+        raise ValueError("Kolom 'Mine type' tidak ditemukan di dataset.")
+except Exception as e:
+    print(f"Error saat membaca dataset: {e}")
+    sys.exit(1)
 
 X = df.drop("Mine type", axis=1)
 y = df["Mine type"]
@@ -25,15 +28,10 @@ X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
 
-# ========================================
-# Setup MLflow lokal
-# ========================================
-mlflow.set_tracking_uri("file:///home/runner/work/Workflow-CI/Workflow-CI/mlruns")
+# Setup MLflow experiment
 mlflow.set_experiment("Mine Classification with RF")
 
-# ========================================
 # Hyperparameter Tuning
-# ========================================
 param_grid = {
     "n_estimators": [50, 100, 200],
     "max_depth": [None, 5, 10],
@@ -48,9 +46,7 @@ grid_search = GridSearchCV(
     n_jobs=-1
 )
 
-# ========================================
-# Training + Logging Manual
-# ========================================
+# Training + Logging
 with mlflow.start_run():
     start_time = time.time()
     grid_search.fit(X_train, y_train)
@@ -60,6 +56,8 @@ with mlflow.start_run():
     y_pred = best_model.predict(X_test)
 
     # Metrics
+    n_classes = len(y.unique())
+    mlflow.log_metric("n_classes", n_classes)
     mlflow.log_params(grid_search.best_params_)
     mlflow.log_metric("accuracy", accuracy_score(y_test, y_pred))
     mlflow.log_metric("f1_macro", f1_score(y_test, y_pred, average="macro"))
