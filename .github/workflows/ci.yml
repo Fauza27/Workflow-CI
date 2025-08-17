@@ -26,6 +26,8 @@ jobs:
           pip install mlflow dagshub scikit-learn pandas numpy
 
       - name: Run mlflow project
+        env:
+          DAGSHUB_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
         run: mlflow run MLProject -P data_path=MLProject/landmine_preprocessing.csv --env-manager=local
 
       - name: Save latest run_id
