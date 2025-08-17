@@ -5,4 +5,4 @@ entry_points:
   main:
     parameters:
       data_path: { type: str }
-    command: "python modelling_tuning.py"
+    command: "python modelling_tuning.py {data_path}"

@@ -6,11 +6,17 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, matthews_corrcoef
 import time
 import os
+import sys
 
 # ========================================
 # Load data preprocessing
 # ========================================
-df = pd.read_csv("landmine_preprocessing.csv")
+if len(sys.argv) > 1:
+    data_path = sys.argv[1]  # mlflow run MLProject -P data_path=...
+else:
+    data_path = "MLProject/landmine_preprocessing.csv"  
+
+df = pd.read_csv(data_path)
 
 X = df.drop("Mine type", axis=1)
 y = df["Mine type"]
