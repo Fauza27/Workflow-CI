@@ -20,11 +20,20 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Install MLflow
-        run: pip install mlflow dagshub scikit-learn pandas numpy
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install mlflow dagshub scikit-learn pandas numpy
 
-      - name: Run MLflow Project
-        run: mlflow run MLProject -P data_path=MLProject/landmine_preprocessing.csv
+      - name: Run mlflow project
+        run: mlflow run MLProject -P data_path=MLProject/landmine_preprocessing.csv --env-manager=local
+
+      - name: Save latest run_id
+        id: get-run
+        run: |
+          RUN_ID=$(ls -t mlruns/0 | head -n 1)
+          echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
+          echo "Latest run_id: $RUN_ID"
 
       - name: Upload model artifact
         uses: actions/upload-artifact@v4
@@ -35,9 +44,16 @@ jobs:
   docker-build:
     runs-on: ubuntu-latest
     needs: build-train
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
+
+      - name: Download model artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: trained-model
+          path: mlruns/
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
@@ -46,7 +62,9 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build Docker Image with MLflow
-        run: mlflow models build-docker -m "mlruns/0/<LATEST_RUN_ID>/artifacts/model" -n ${{ secrets.DOCKERHUB_USERNAME }}/mlflow-model:latest
+        run: |
+          mlflow models build-docker -m "mlruns/0/${{ env.RUN_ID }}/artifacts/model" \
+            -n ${{ secrets.DOCKERHUB_USERNAME }}/mlflow-model:latest
 
       - name: Push Docker Image
         run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/mlflow-model:latest
