@@ -2,86 +2,85 @@ name: CI/CD MLflow
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
-    branches:
-      - main
+    branches: [main]
 
 env:
-  CSV_URL: "MLProject/landmine_preprocessing.csv"
-  TARGET_VAR: "Mine type"
+  TARGET_VAR: "Mine type" # hanya contoh env untuk logging
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout repo
-      - uses: actions/checkout@v3
+      # 1) Checkout
+      - name: Run actions/checkout@v3
+        uses: actions/checkout@v3
 
-      # 2. Setup Python
+      # 2) Setup Python
       - name: Set up Python 3.12.7
         uses: actions/setup-python@v4
         with:
           python-version: "3.12.7"
 
-      # 3. Check Env
+      # 3) Check Env
       - name: Check Env
         run: |
-          echo "CSV: $CSV_URL"
-          echo "Target: $TARGET_VAR"
+          echo "Branch: $GITHUB_REF"
+          python --version
+          echo "TARGET_VAR=$TARGET_VAR"
 
-      # 4. Install dependencies
+      # 4) Install dependencies (untuk training)
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install mlflow scikit-learn pandas gdown
+          pip install mlflow scikit-learn pandas
 
-      # 5. Run as mlflow project
+      # 5) Run mlflow project
       - name: Run mlflow project
         run: |
           mlflow run MLProject --env-manager=local
 
-      # 6. Get latest run_id
+      # 6) Get latest MLflow run_id
       - name: Get latest MLflow run_id
         run: |
           RUN_ID=$(ls -td mlruns/0/*/ | head -n 1 | cut -d'/' -f3)
           echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
           echo "Latest run_id: $RUN_ID"
 
-      # 7. Install Python dependencies (opsional tambahan sesuai log dosen)
+      # 7) Install Python dependencies (khusus Google Drive API)
       - name: Install Python dependencies
         run: |
-          pip install requests google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client
+          pip install --upgrade google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client
 
-      # 8. Upload artefak ke Google Drive
+      # 8) Upload to Google Drive (tanpa gdown)
       - name: Upload to Google Drive
-        run: |
-          pip install --upgrade gdown
-          zip -r model_artifact.zip mlruns
-          gdown --id ${{ secrets.GDRIVE_FOLDER_ID }} --upload model_artifact.zip
         env:
+          GDRIVE_CREDENTIALS: ${{ secrets.GDRIVE_CREDENTIALS }}
           GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
+        run: |
+          python MLProject/upload_to_gdrive.py
 
-      # 9. Build Docker Model
+      # 9) Build Docker Model dari artifact run_id
       - name: Build Docker Model
         run: |
+          # pastikan nama subpath model sesuai dgn yang kamu log di modelling.py
           mlflow models build-docker --model-uri "runs:/$RUN_ID/random_forest_model" --name "mine-rf"
 
-      # 10. Login to Docker Hub
+      # 10) Login ke Docker Hub
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-      # 11. Tag Docker Image
+      # 11) Tag image
       - name: Tag Docker Image
         run: |
           docker tag mine-rf ${{ secrets.DOCKER_HUB_USERNAME }}/mine-rf:latest
 
-      # 12. Push Docker Image
+      # 12) Push image
       - name: Push Docker Image
         run: |
           docker push ${{ secrets.DOCKER_HUB_USERNAME }}/mine-rf:latest
