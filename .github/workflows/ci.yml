@@ -32,7 +32,7 @@ jobs:
       - name: Run MLflow project
         run: |
           export MLFLOW_TRACKING_URI=file:./mlruns
-          mlflow run MLProject -P data_path=${{ env.CSV_PATH }} --env-manager=local
+          mlflow run MLProject -P data_path=${{ env.CSV_PATH }} --env-manager=local --experiment-name "Mine Classification with RF"
 
       - name: Get latest MLflow run_id
         run: |
