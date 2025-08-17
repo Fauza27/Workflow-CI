@@ -22,11 +22,12 @@ X_train, X_test, y_train, y_test = train_test_split(
 # ========================================
 # Setup MLflow lokal
 # ========================================
-import dagshub
-dagshub.init(repo_owner='Fauza27', repo_name='Eksperimen_SML_Muhammad-Fauza', mlflow=True)
+# import dagshub
+# dagshub.init(repo_owner='Fauza27', repo_name='Eksperimen_SML_Muhammad-Fauza', mlflow=True)
 
-mlflow.set_tracking_uri("https://dagshub.com/Fauza27/Eksperimen_SML_Muhammad-Fauza.mlflow")
+mlflow.set_tracking_uri("file:///home/runner/work/Workflow-CI/Workflow-CI/mlruns")
 mlflow.set_experiment("Mine Classification with RF")
+
 
 # ========================================
 # Hyperparameter Tuning
