@@ -9,7 +9,7 @@ import time
 # ========================================
 # Load data preprocessing
 # ========================================
-df = pd.read_csv("Membangun_model/landmine_preprocessing.csv")
+df = pd.read_csv("landmine_preprocessing.csv")
 
 X = df.drop("Mine type", axis=1)
 y = df["Mine type"]
